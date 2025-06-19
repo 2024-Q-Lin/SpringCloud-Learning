@@ -1,0 +1,59 @@
+server:
+  port: 8000
+
+spring:
+  #指定环境
+  profiles:
+    active: prod
+    include: feign
+  application:
+    name: service-order
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      #指定命名空间
+      config:
+        #绑定命名空间
+        namespace: ${spring.profiles.active}
+
+logging:
+  level:
+    #  开启feign 包下的 debug 模式
+    com.joe.order.feign: debug
+
+
+#  config:
+#    #引入配置,import可以列表导入，？后面指定服务分组（服务）
+#    import:
+#      - nacos:common.yml?group=order
+#      - nacos:database.yml?group=order
+
+
+#分开不同的配置环境
+---
+spring:
+  config:
+    import:
+      - nacos:common.yml?group=order
+      - nacos:database.yml?group=order
+    activate:
+      on-profile: dev
+---
+spring:
+  config:
+    import:
+      - nacos:common.yml?group=order
+      - nacos:database.yml?group=order
+      - nacos:hello-nacos.yml?group=order
+    activate:
+      on-profile: test
+---
+spring:
+  config:
+    import:
+      - nacos:common.yml?group=order
+      - nacos:database.yml?group=order
+      - nacos:prod-nacos.yml?group=order
+    activate:
+      on-profile: prod
+
