@@ -1,7 +1,9 @@
 package com.joe.order.service.impl;
+
 import java.math.BigDecimal;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.joe.common.allenum.ServerEnum;
 import com.joe.order.bean.Order;
 import com.joe.order.feign.ProductFeignClient;
@@ -39,11 +41,12 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 创建订单
+     *
      * @param productId 产品 ID
-     * @param userId 用户 ID
+     * @param userId    用户 ID
      * @return 订单信息
      */
-    @SentinelResource(value = "createOrder")
+    @SentinelResource(value = "createOrder", blockHandler = "createOrderFallback")
     @Override
     public Order createOrder(Long productId, Long userId) {
 //        Product product = getProductFromRemoteWithLoadBalanceAnnotation(productId);
@@ -60,14 +63,28 @@ public class OrderServiceImpl implements OrderService {
         return order;
     }
 
+    //@SentinelResource注解兜底异常处理
+    public Order createOrderFallback(Long productId, Long userId, BlockException e) {
+        log.error("createOrderFallback:{}", e.getMessage());
+        Order order = new Order();
+        order.setId(0L);
+        order.setTotalAmount(new BigDecimal(0));
+        order.setUserId(userId);
+        order.setNickName("未知用户");
+        order.setAddress("异常信息：" + e.getClass());
+        order.setProductList(null);
+        return order;
+    }
+
 
     /**
      * 注解式负载均衡远程调用获取产品信息
+     *
      * @param productId 产品 ID
      * @return 产品信息
      */
     private Product getProductFromRemoteWithLoadBalanceAnnotation(Long productId) {
-        String getProductUrl = "http://"+ServerEnum.PRODUCT_SERVER.getServerName()+"/product/product/"+productId;
+        String getProductUrl = "http://" + ServerEnum.PRODUCT_SERVER.getServerName() + "/product/product/" + productId;
         // log.info("getProductUrl:{}", getProductUrl);这里打印没有用，是在restTemplate.getForObject中自动装配的
         //发送请求（需要使用到restTemplate）
         Product product = restTemplate.getForObject(getProductUrl, Product.class);
@@ -77,6 +94,7 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 负载均衡远程调用获取产品信息
+     *
      * @param productId 产品 ID
      * @return 产品信息
      */
@@ -85,7 +103,7 @@ public class OrderServiceImpl implements OrderService {
         ServiceInstance instance = loadBalancerClient.choose(ServerEnum.PRODUCT_SERVER.getServerName());
 
         //构造远程 url（相当于在服务端发起 http 请求）
-        String getProductUrl = "http://" +instance.getHost()+":"+instance.getPort()+"/product/"+"product/"+productId;
+        String getProductUrl = "http://" + instance.getHost() + ":" + instance.getPort() + "/product/" + "product/" + productId;
         log.info("getProductUrl:{}", getProductUrl);
         //发送请求（需要使用到restTemplate）
         Product product = restTemplate.getForObject(getProductUrl, Product.class);
@@ -94,6 +112,7 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 调用获取产品信息
+     *
      * @param productId 产品 ID
      * @return 产品信息
      */
@@ -103,7 +122,7 @@ public class OrderServiceImpl implements OrderService {
         //手动获取，直接获取第一个（用于测试，实际上需要做负载均衡）
         ServiceInstance serviceInstance = instances.get(0);
         //构造远程 url（相当于在服务端发起 http 请求）
-        String getProductUrl = "http://" +serviceInstance.getHost()+":"+serviceInstance.getPort()+"/product/"+"product/"+productId;
+        String getProductUrl = "http://" + serviceInstance.getHost() + ":" + serviceInstance.getPort() + "/product/" + "product/" + productId;
         log.info("getProductUrl:{}", getProductUrl);
         //发送请求（需要使用到restTemplate）
         Product product = restTemplate.getForObject(getProductUrl, Product.class);
