@@ -25,6 +25,7 @@ public class MyBlockExceptionHandler implements BlockExceptionHandler {
     public void handle(HttpServletRequest request,
                        HttpServletResponse response,
                        String resourceName, BlockException e) throws Exception {
+        response.setStatus(429);//429 表示请求被限流了
         response.setContentType("application/json;charset=utf-8");
 
         PrintWriter writer = response.getWriter();

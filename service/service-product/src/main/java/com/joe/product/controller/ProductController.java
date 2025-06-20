@@ -33,6 +33,7 @@ public class ProductController {
                               HttpServletRequest request) {
         String header = request.getHeader("X-Token");
         log.info("调用了当前端口,token="+header);
+//        int i = 10/0; //测试异常
         return productService.getProductById(productId);
     }
 }

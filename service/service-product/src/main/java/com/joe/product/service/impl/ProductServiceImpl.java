@@ -33,7 +33,7 @@ public class ProductServiceImpl implements ProductService {
         product.setNum(3);
 
 //        try {
-//            TimeUnit.SECONDS.sleep(100);
+//            TimeUnit.SECONDS.sleep(2);
 //        } catch (InterruptedException e) {
 //            throw new RuntimeException(e);
 //        }
